@@ -169,6 +169,7 @@ Display_formated_BCD:
 	Display_char(#'.')
 	Display_BCD(bcd+1)
 	Display_BCD(bcd+0)
+	Display_char(#'C')
 	ret
 
 putchar:
