@@ -103,7 +103,6 @@ DSEG at 30H
 x:   ds 4
 y:   ds 4
 bcd: ds 5
-VLED_ADC: ds 2
 
 BSEG
 mf: dbit 1
@@ -220,25 +219,6 @@ Send_to_Putty:
 	lcall SendString
 	ret
 
-Read_ADC:
-	clr ADCF
-	setb ADCS ; ADC start trigger signal
-	jnb ADCF, $ ; Wait for conversion complete
-	; Read the ADC result and store in [R1, R0]
-	mov a, ADCRL
-	anl a, #0x0f
-	mov R0, a
-	mov a, ADCRH
-	swap a
-	push acc
-	anl a, #0x0f
-	mov R1, a
-	pop acc
-	anl a, #0xf0
-	orl a, R0
-	mov R0, A
-	ret
-	
 main:
 	mov sp, #0x7f
 	lcall Init_All
@@ -253,33 +233,32 @@ main:
     Send_Constant_String(#value_message)
 	
 Forever:
-	
-	; Read the 2.08V LED voltage connected to AIN0 on pin 6
-	anl ADCCON0, #0xF0
-	orl ADCCON0, #0x00 ; Select channel 0
-	lcall Read_ADC
-	; Save result for later use
-	mov VLED_ADC+0, R0
-	mov VLED_ADC+1, R1
-	; Read the signal connected to AIN7
-	anl ADCCON0, #0xF0
-	orl ADCCON0, #0x07 ; Select channel 7
-	lcall Read_ADC
-	; Convert to voltage
+	clr ADCF
+	setb ADCS ;  ADC start trigger signal
+    jnb ADCF, $ ; Wait for conversion complete
+    
+    
+    ; Read the ADC result and store in [R1, R0]
+    mov a, ADCRH   
+    swap a
+    push acc
+    anl a, #0x0f
+    mov R1, a
+    pop acc
+    anl a, #0xf0
+    orl a, ADCRL
+    mov R0, A
+    
+    ; Convert to voltage
 	mov x+0, R0
 	mov x+1, R1
-	; Pad other bits with zero
 	mov x+2, #0
 	mov x+3, #0
-	Load_y(20628) ; The MEASURED LED voltage: 2.074V, with 4 decimal places
+	Load_y(50300) ; VCC 
 	lcall mul32
-	; Retrive the ADC LED value
-	mov y+0, VLED_ADC+0
-	mov y+1, VLED_ADC+1
-	; Pad other bits with zero
-	mov y+2, #0
-	mov y+3, #0
+	Load_y(4095) ; 2^12-1
 	lcall div32
+	
 
 	;convert from voltage to temperature in celcius:
 
