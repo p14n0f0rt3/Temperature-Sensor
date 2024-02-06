@@ -33,6 +33,7 @@ test_message:     db '*** ADC TEST ***', 0
 value_message:    db 'Temp:     ', 0
 Hello_World:      DB  'Hello, World!', '\r', '\n', 0
 Enter:            DB '\r', '\n', 0
+Dec_pt:           DB '.', 0
 cseg
 
 ; These 'equ' must match the hardware wiring
@@ -224,7 +225,8 @@ endmac
 Send_to_Putty:
 	;Send_BCD(bcd+3)
 	Send_BCD(bcd+2)
-	
+	mov DPTR, #Dec_pt
+	lcall SendString
 	Send_BCD(bcd+1)
 	;Send_BCD(bcd+0)
 	mov DPTR, #Enter
@@ -306,16 +308,7 @@ Forever:
 	lcall waitms
 	lcall waitms
 	lcall waitms
-	; Convert to BCD and display
-	lcall hex2bcd
-	lcall Display_formated_BCD
-	
-	; Wait 500 ms between conversions
-	mov R2, #250
-	lcall waitms
-	mov R2, #250
-	lcall waitms
-	
+
 	ljmp Forever
 END
 	
